@@ -18,30 +18,116 @@ export default function Auth() {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate login
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({
-        title: "Welcome back!",
-        description: "You've successfully logged in.",
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get('login-email') as string;
+    const password = formData.get('login-password') as string;
+  
+    try {
+      const response = await fetch('http://localhost:8000/api/auth/login/', {
+        method: 'POST', // Make sure this is POST
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
       });
-      navigate("/");
-    }, 1500);
+  
+      const data = await response.json();
+  
+      if (response.ok) {
+        // Store token in localStorage
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        toast({
+          title: "Welcome back!",
+          description: data.message,
+        });
+        navigate("/");
+      } else {
+        toast({
+          title: "Error",
+          description: data.email?.[0] || data.password?.[0] || data.error || "Login failed",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Network error. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
-
+  
   const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate signup
-    setTimeout(() => {
-      setIsLoading(false);
+    const formData = new FormData(e.currentTarget);
+    const full_name = formData.get('signup-name') as string;
+    const email = formData.get('signup-email') as string;
+    const password = formData.get('signup-password') as string;
+  
+    // Add validation to make sure we have values
+    if (!full_name || !email || !password) {
       toast({
-        title: "Account created!",
-        description: "Welcome to Google AI Learning Platform.",
+        title: "Error",
+        description: "All fields are required",
+        variant: "destructive",
       });
-      navigate("/");
-    }, 1500);
+      setIsLoading(false);
+      return;
+    }
+  
+    try {
+      const response = await fetch('http://localhost:8000/api/auth/signup/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          full_name: full_name.trim(),
+          email: email.trim().toLowerCase(),
+          password: password 
+        }),
+      });
+  
+      const data = await response.json();
+  
+      if (response.ok) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        toast({
+          title: "Account created!",
+          description: data.message,
+        });
+        navigate("/");
+      } else {
+        // Improved error handling
+        const errorMessage = data.email?.[0] || 
+                            data.password?.[0] || 
+                            data.full_name?.[0] ||
+                            data.error || 
+                            "Signup failed";
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Signup error:', error);
+      toast({
+        title: "Error",
+        description: "Network error. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -85,6 +171,7 @@ export default function Auth() {
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="login-email"
+                        name="login-email" // Add this line
                         type="email"
                         placeholder="your.email@gmail.com"
                         className="pl-10"
@@ -99,6 +186,7 @@ export default function Auth() {
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="login-password"
+                        name="login-password" // Add this line
                         type="password"
                         placeholder="••••••••"
                         className="pl-10"
@@ -122,6 +210,7 @@ export default function Auth() {
                       <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="signup-name"
+                        name="signup-name" // Add this line
                         type="text"
                         placeholder="John Doe"
                         className="pl-10"
@@ -136,6 +225,7 @@ export default function Auth() {
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="signup-email"
+                        name="signup-email" // Add this line
                         type="email"
                         placeholder="your.email@gmail.com"
                         className="pl-10"
@@ -150,6 +240,7 @@ export default function Auth() {
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="signup-password"
+                        name="signup-password" // Add this line
                         type="password"
                         placeholder="••••••••"
                         className="pl-10"
