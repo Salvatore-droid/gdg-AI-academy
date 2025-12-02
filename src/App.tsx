@@ -23,6 +23,9 @@ import ManageUsers from "./pages/admin/ManageUsers";
 import ManageModules from "./pages/admin/ManageModules";
 import ManageCommunity from "./pages/admin/ManageCommunity";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AdminLogin from "./pages/admin/AdminLogin"; // Add this
+import { AdminAuthProvider } from "@/contexts/AdminAuthContext"; // Add this
+import ProtectedAdminRoute from "@/components/ProtectedAdminRoute"; // Add this
 
 const queryClient = new QueryClient();
 
@@ -32,52 +35,59 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          {/* Admin Routes */}
-          <Route path="/admin/*" element={
-            <SidebarProvider defaultOpen>
-              <div className="min-h-screen flex w-full bg-background">
-                <AdminSidebar />
-                <div className="flex-1 flex flex-col">
-                  <Routes>
-                    <Route path="/" element={<AdminDashboard />} />
-                    <Route path="/courses" element={<ManageCourses />} />
-                    <Route path="/users" element={<ManageUsers />} />
-                    <Route path="/modules" element={<ManageModules />} />
-                    <Route path="/community" element={<ManageCommunity />} />
-                    <Route path="/settings" element={<AdminSettings />} />
-                  </Routes>
-                </div>
-              </div>
-            </SidebarProvider>
-          } />
+        <AdminAuthProvider> {/* Wrap everything with AdminAuthProvider */}
+          <Routes>
+            {/* Public Auth Routes */}
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/admin/login" element={<AdminLogin />} />
 
-          {/* Auth Route (no sidebar) */}
-          <Route path="/auth" element={<Auth />} />
+            {/* Protected Admin Routes */}
+            <Route element={<ProtectedAdminRoute />}>
+              <Route path="/admin/*" element={
+                <SidebarProvider defaultOpen>
+                  <div className="min-h-screen flex w-full bg-gray-900">
+                    <AdminSidebar />
+                    <div className="flex-1 flex flex-col">
+                      <Routes>
+                        <Route path="/" element={<AdminDashboard />} />
+                        <Route path="/dashboard" element={<AdminDashboard />} />
+                        <Route path="/courses" element={<ManageCourses />} />
+                        <Route path="/users" element={<ManageUsers />} />
+                        <Route path="/modules" element={<ManageModules />} />
+                        <Route path="/community" element={<ManageCommunity />} />
+                        <Route path="/settings" element={<AdminSettings />} />
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </div>
+                  </div>
+                </SidebarProvider>
+              } />
+            </Route>
 
-          {/* Main App Routes */}
-          <Route path="/*" element={
-            <SidebarProvider defaultOpen>
-              <div className="min-h-screen flex w-full bg-background">
-                <AppSidebar />
-                <div className="flex-1 flex flex-col">
-                  <TopBar />
-                  <Routes>
-                    <Route path="/" element={<Dashboard />} />
-                    <Route path="/courses" element={<Courses />} />
-                    <Route path="/courses/:id" element={<CourseDetail />} />
-                    <Route path="/modules" element={<Modules />} />
-                    <Route path="/ai-labs" element={<AILabs />} />
-                    <Route path="/progress" element={<Progress />} />
-                    <Route path="/community" element={<Community />} />
-                    <Route path="/settings" element={<Settings />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
+            {/* Main App Routes (Regular Users) */}
+            <Route path="/*" element={
+              <SidebarProvider defaultOpen>
+                <div className="min-h-screen flex w-full bg-background">
+                  <AppSidebar />
+                  <div className="flex-1 flex flex-col">
+                    <TopBar />
+                    <Routes>
+                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/courses" element={<Courses />} />
+                      <Route path="/courses/:id" element={<CourseDetail />} />
+                      <Route path="/modules" element={<Modules />} />
+                      <Route path="/ai-labs" element={<AILabs />} />
+                      <Route path="/progress" element={<Progress />} />
+                      <Route path="/community" element={<Community />} />
+                      <Route path="/settings" element={<Settings />} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </div>
                 </div>
-              </div>
-            </SidebarProvider>
-          } />
-        </Routes>
+              </SidebarProvider>
+            } />
+          </Routes>
+        </AdminAuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

@@ -8,11 +8,58 @@ import { motion } from "framer-motion";
 import { Mail, Lock, User, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { Shield } from "lucide-react";
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const handleAdminLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get('admin-email') as string;
+    const password = formData.get('admin-password') as string;
+  
+    try {
+      const response = await fetch('http://localhost:8000/api/admin/auth/login/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+  
+      const data = await response.json();
+  
+      if (response.ok) {
+        localStorage.setItem('admin_token', data.token);
+        localStorage.setItem('admin_user', JSON.stringify(data.admin_user));
+        
+        toast({
+          title: "Admin Access Granted",
+          description: data.message,
+        });
+        navigate("/admin/admindashboard");
+      } else {
+        toast({
+          title: "Admin Access Denied",
+          description: data.error || "Invalid admin credentials",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Network error. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -160,7 +207,7 @@ export default function Auth() {
             <Tabs defaultValue="login" className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-6">
                 <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                <TabsTrigger value="signup">Sign Up</TabsTrigger>                
               </TabsList>
 
               <TabsContent value="login">
@@ -255,6 +302,46 @@ export default function Auth() {
                   </Button>
                 </form>
               </TabsContent>
+
+              {/* Add this new TabsContent */}
+              <TabsContent value="admin">
+                <form onSubmit={handleAdminLogin} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="admin-email">Admin Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="admin-email"
+                        name="admin-email"
+                        type="email"
+                        placeholder="admin@example.com"
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="admin-password">Admin Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="admin-password"
+                        name="admin-password"
+                        type="password"
+                        placeholder="••••••••"
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <Button type="submit" className="w-full bg-google-red hover:bg-google-red/90" disabled={isLoading}>
+                    {isLoading ? "Signing in..." : "Sign in as Admin"}
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </form>
+              </TabsContent>
             </Tabs>
 
             <div className="mt-6">
@@ -275,6 +362,20 @@ export default function Auth() {
                   <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 01-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
                 </svg>
                 Continue with Google
+              </Button>
+            </div>
+            
+            <div className="mt-4 pt-4 border-t">
+              <p className="text-xs text-center text-muted-foreground mb-2">
+                Are you an administrator?
+              </p>
+              <Button
+                variant="ghost"
+                className="w-full text-sm"
+                onClick={() => navigate('/admin/login')}
+              >
+                <Shield className="h-4 w-4 mr-2" />
+                Access Admin Portal
               </Button>
             </div>
           </CardContent>
