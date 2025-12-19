@@ -60,12 +60,10 @@ interface Module {
   course_id: string;
   order: number;
   duration_minutes: number;
-  content_type: string;
-  content_url?: string;
+  video_url?: string;  // Updated from content_url
   is_active: boolean;
   created_at: string;
   updated_at: string;
-  lesson_count: number;
   total_duration: number;
 }
 
@@ -73,7 +71,7 @@ interface ModuleStats {
   total_modules: number;
   active_modules: number;
   total_duration: number;
-  modules_by_type: Record<string, number>;
+  modules_by_type?: Record<string, number>;  // Make optional
 }
 
 const ManageModules = () => {
@@ -83,7 +81,6 @@ const ManageModules = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCourse, setFilterCourse] = useState("all");
-  const [filterType, setFilterType] = useState("all");
   const [selectedModules, setSelectedModules] = useState<string[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -99,38 +96,28 @@ const ManageModules = () => {
     course_id: "",
     order: 1,
     duration_minutes: 60,
-    content_type: "video",
-    content_url: "",
+    video_url: "",  // Updated from content_url
     is_active: true,
   });
 
   // Fetch modules
-  // Update the fetchModules function
   const fetchModules = async () => {
     try {
-      // If you want to fetch all modules across all courses
       const response = await fetch('http://localhost:8000/api/admin/modules/', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
 
-      // OR if you want to fetch modules for a specific course
-      // Get the course ID from somewhere (maybe from a dropdown selection)
-      // const selectedCourseId = formData.course_id || 'all';
-      // const response = await fetch(`http://localhost:8000/api/admin/modules/?course_id=${selectedCourseId}`, {
-      //   headers: {
-      //     'Authorization': `Bearer ${token}`,
-      //   },
-      // });
-
       if (response.ok) {
         const data = await response.json();
+        console.log('Fetched modules data:', data);
         setModules(data.modules || []);
       } else {
         throw new Error('Failed to fetch modules');
       }
     } catch (error) {
+      console.error('Error fetching modules:', error);
       toast({
         title: "Error",
         description: "Failed to load modules",
@@ -178,11 +165,15 @@ const ManageModules = () => {
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      await Promise.all([
-        fetchModules(),
-        fetchCourses(),
-        fetchModuleStats()
-      ]);
+      try {
+        await Promise.all([
+          fetchModules(),
+          fetchCourses(),
+          fetchModuleStats()
+        ]);
+      } catch (error) {
+        console.error('Error loading data:', error);
+      }
       setLoading(false);
     };
     loadData();
@@ -190,17 +181,15 @@ const ManageModules = () => {
 
   // Filtered modules
   const filteredModules = modules.filter(module => {
+    if (!module) return false;
+    
     const matchesSearch = module.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         module.description.toLowerCase().includes(searchTerm.toLowerCase());
+                         (module.description && module.description.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesCourse = filterCourse === "all" || module.course_id === filterCourse;
-    const matchesType = filterType === "all" || module.content_type === filterType;
     
-    return matchesSearch && matchesCourse && matchesType;
+    return matchesSearch && matchesCourse;
   });
-
-  // Get unique content types
-  const contentTypes = Array.from(new Set(modules.map(module => module.content_type)));
 
   // Handle module selection
   const toggleModuleSelection = (moduleId: string) => {
@@ -232,8 +221,7 @@ const ManageModules = () => {
       course_id: courses.length > 0 ? courses[0].id : "",
       order: 1,
       duration_minutes: 60,
-      content_type: "video",
-      content_url: "",
+      video_url: "",
       is_active: true,
     });
     setEditingModule(null);
@@ -250,6 +238,15 @@ const ManageModules = () => {
       return;
     }
 
+    if (!formData.title.trim()) {
+      toast({
+        title: "Error",
+        description: "Module title is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const response = await fetch(`http://localhost:8000/api/admin/courses/${formData.course_id}/modules/`, {
         method: 'POST',
@@ -257,7 +254,15 @@ const ManageModules = () => {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          title: formData.title,
+          description: formData.description,
+          order: formData.order,
+          duration_minutes: formData.duration_minutes,
+          video_url: formData.video_url,
+          is_active: formData.is_active,
+          course_id: formData.course_id
+        }),
       });
 
       if (response.ok) {
@@ -271,12 +276,13 @@ const ManageModules = () => {
         await fetchModuleStats();
       } else {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to create module');
+        throw new Error(error.error || error.detail || 'Failed to create module');
       }
     } catch (error: any) {
+      console.error('Error creating module:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to create module",
         variant: "destructive",
       });
     }
@@ -284,16 +290,17 @@ const ManageModules = () => {
 
   // Handle edit module
   const handleEditModule = (module: Module) => {
+    if (!module) return;
+    
     setEditingModule(module);
     setFormData({
-      title: module.title,
-      description: module.description,
-      course_id: module.course_id,
-      order: module.order,
-      duration_minutes: module.duration_minutes,
-      content_type: module.content_type,
-      content_url: module.content_url || "",
-      is_active: module.is_active,
+      title: module.title || "",
+      description: module.description || "",
+      course_id: module.course_id || "",
+      order: module.order || 1,
+      duration_minutes: module.duration_minutes || 60,
+      video_url: module.video_url || "",
+      is_active: module.is_active || true,
     });
     setIsEditDialogOpen(true);
   };
@@ -308,7 +315,14 @@ const ManageModules = () => {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          title: formData.title,
+          description: formData.description,
+          order: formData.order,
+          duration_minutes: formData.duration_minutes,
+          video_url: formData.video_url,
+          is_active: formData.is_active,
+        }),
       });
 
       if (response.ok) {
@@ -322,12 +336,13 @@ const ManageModules = () => {
         await fetchModuleStats();
       } else {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to update module');
+        throw new Error(error.error || error.detail || 'Failed to update module');
       }
     } catch (error: any) {
+      console.error('Error updating module:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to update module",
         variant: "destructive",
       });
     }
@@ -355,12 +370,14 @@ const ManageModules = () => {
         await fetchModules();
         await fetchModuleStats();
       } else {
-        throw new Error('Failed to delete module');
+        const error = await response.json();
+        throw new Error(error.error || error.detail || 'Failed to delete module');
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Error deleting module:', error);
       toast({
         title: "Error",
-        description: "Failed to delete module",
+        description: error.message || "Failed to delete module",
         variant: "destructive",
       });
     }
@@ -492,20 +509,37 @@ const ManageModules = () => {
 
   // Format duration
   const formatDuration = (minutes: number) => {
+    if (!minutes) return "0 min";
+    
     if (minutes < 60) {
       return `${minutes} min`;
     }
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
-    return `${hours}h ${mins > 0 ? `${mins}m` : ''}`;
+    return `${hours}h ${mins > 0 ? `${mins}m` : ''}`.trim();
   };
 
+  // Add safety checks before render
   if (loading) {
     return (
       <div className="min-h-screen bg-background p-8 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-google-yellow border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading modules...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!Array.isArray(modules)) {
+    return (
+      <div className="min-h-screen bg-background p-8">
+        <div className="text-center py-8">
+          <h2 className="text-2xl font-bold text-destructive mb-4">Data Error</h2>
+          <p className="text-muted-foreground">Modules data format is invalid</p>
+          <Button onClick={() => window.location.reload()} className="mt-4">
+            Reload Page
+          </Button>
         </div>
       </div>
     );
@@ -539,13 +573,13 @@ const ManageModules = () => {
 
           {/* Statistics Cards */}
           {stats && (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <Card className="bg-gradient-card border-border/50">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-muted-foreground">Total Modules</p>
-                      <p className="text-3xl font-bold text-foreground mt-2">{stats.total_modules}</p>
+                      <p className="text-3xl font-bold text-foreground mt-2">{stats.total_modules || 0}</p>
                     </div>
                     <BookOpen className="w-8 h-8 text-google-yellow" />
                   </div>
@@ -557,7 +591,7 @@ const ManageModules = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-muted-foreground">Active Modules</p>
-                      <p className="text-3xl font-bold text-foreground mt-2">{stats.active_modules}</p>
+                      <p className="text-3xl font-bold text-foreground mt-2">{stats.active_modules || 0}</p>
                     </div>
                     <BookOpen className="w-8 h-8 text-google-green" />
                   </div>
@@ -569,23 +603,11 @@ const ManageModules = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-muted-foreground">Total Duration</p>
-                      <p className="text-3xl font-bold text-foreground mt-2">{formatDuration(stats.total_duration)}</p>
-                    </div>
-                    <BookOpen className="w-8 h-8 text-google-blue" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-card border-border/50">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Video Modules</p>
                       <p className="text-3xl font-bold text-foreground mt-2">
-                        {stats.modules_by_type?.video || 0}
+                        {formatDuration(stats.total_duration || 0)}
                       </p>
                     </div>
-                    <BookOpen className="w-8 h-8 text-google-red" />
+                    <BookOpen className="w-8 h-8 text-google-blue" />
                   </div>
                 </CardContent>
               </Card>
@@ -617,20 +639,6 @@ const ManageModules = () => {
                     {courses.map(course => (
                       <SelectItem key={course.id} value={course.id}>
                         {course.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Select value={filterType} onValueChange={setFilterType}>
-                  <SelectTrigger className="w-[140px]">
-                    <SelectValue placeholder="All Types" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    {contentTypes.map(type => (
-                      <SelectItem key={type} value={type}>
-                        {type.charAt(0).toUpperCase() + type.slice(1)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -678,7 +686,7 @@ const ManageModules = () => {
                     <TableHead className="w-12">
                       <input
                         type="checkbox"
-                        checked={selectedModules.length === filteredModules.length && filteredModules.length > 0}
+                        checked={filteredModules.length > 0 && selectedModules.length === filteredModules.length}
                         onChange={selectAllModules}
                         className="rounded border-gray-300"
                       />
@@ -687,117 +695,115 @@ const ManageModules = () => {
                     <TableHead>Course</TableHead>
                     <TableHead>Duration</TableHead>
                     <TableHead>Order</TableHead>
-                    <TableHead>Type</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredModules.length > 0 ? (
-                    filteredModules.map((module, index) => (
-                      <motion.tr
-                        key={module.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3, delay: index * 0.05 }}
-                        className="border-b border-border/50 hover:bg-muted/50"
-                      >
-                        <TableCell>
-                          <input
-                            type="checkbox"
-                            checked={selectedModules.includes(module.id)}
-                            onChange={() => toggleModuleSelection(module.id)}
-                            className="rounded border-gray-300"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <BookOpen className="w-4 h-4 text-google-yellow" />
-                            <div>
-                              <div className="font-medium">{module.title}</div>
-                              <div className="text-xs text-muted-foreground truncate max-w-xs">
-                                {module.description.substring(0, 60)}...
+                    filteredModules.map((module, index) => {
+                      if (!module) return null;
+                      
+                      return (
+                        <motion.tr
+                          key={module.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, delay: index * 0.05 }}
+                          className="border-b border-border/50 hover:bg-muted/50"
+                        >
+                          <TableCell>
+                            <input
+                              type="checkbox"
+                              checked={selectedModules.includes(module.id)}
+                              onChange={() => toggleModuleSelection(module.id)}
+                              className="rounded border-gray-300"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <BookOpen className="w-4 h-4 text-google-yellow" />
+                              <div>
+                                <div className="font-medium">{module.title}</div>
+                                <div className="text-xs text-muted-foreground truncate max-w-xs">
+                                  {module.description?.substring(0, 60) || "No description"}...
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{module.course}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          {formatDuration(module.duration_minutes)}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline">#{module.order}</Badge>
-                            <div className="flex flex-col">
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-6 w-6"
-                                onClick={() => handleReorder(module.id, 'up')}
-                                disabled={module.order === 1}
-                              >
-                                <ArrowUp className="w-3 h-3" />
-                              </Button>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-6 w-6"
-                                onClick={() => handleReorder(module.id, 'down')}
-                                disabled={module.order === modules.length}
-                              >
-                                <ArrowDown className="w-3 h-3" />
-                              </Button>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{module.course || "Unknown"}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            {formatDuration(module.duration_minutes)}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline">#{module.order}</Badge>
+                              <div className="flex flex-col">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-6 w-6"
+                                  onClick={() => handleReorder(module.id, 'up')}
+                                  disabled={module.order === 1}
+                                >
+                                  <ArrowUp className="w-3 h-3" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-6 w-6"
+                                  onClick={() => handleReorder(module.id, 'down')}
+                                  disabled={module.order === modules.length}
+                                >
+                                  <ArrowDown className="w-3 h-3" />
+                                </Button>
+                              </div>
                             </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary">
-                            {module.content_type}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={module.is_active ? "default" : "secondary"}
-                            className={module.is_active ? "bg-google-green text-white" : ""}
-                          >
-                            {module.is_active ? "Active" : "Inactive"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreVertical className="w-4 h-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => window.open(`/admin/modules/${module.id}`, '_blank')}>
-                                <Eye className="w-4 h-4 mr-2" />
-                                View Details
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleEditModule(module)}>
-                                <Edit className="w-4 h-4 mr-2" />
-                                Edit Module
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => {
-                                setEditingModule(module);
-                                setIsDeleteDialogOpen(true);
-                              }} className="text-destructive">
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Delete Module
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </motion.tr>
-                    ))
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={module.is_active ? "default" : "secondary"}
+                              className={module.is_active ? "bg-google-green text-white" : ""}
+                            >
+                              {module.is_active ? "Active" : "Inactive"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <MoreVertical className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => window.open(`/admin/modules/${module.id}`, '_blank')}>
+                                  <Eye className="w-4 h-4 mr-2" />
+                                  View Details
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleEditModule(module)}>
+                                  <Edit className="w-4 h-4 mr-2" />
+                                  Edit Module
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => {
+                                  setEditingModule(module);
+                                  setIsDeleteDialogOpen(true);
+                                }} className="text-destructive">
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Delete Module
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </motion.tr>
+                      );
+                    })
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                         No modules found
                       </TableCell>
                     </TableRow>
@@ -860,7 +866,7 @@ const ManageModules = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="order">Order</Label>
                   <Input
@@ -883,33 +889,15 @@ const ManageModules = () => {
                     placeholder="60"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="content_type">Content Type</Label>
-                  <Select
-                    value={formData.content_type}
-                    onValueChange={(value) => handleFormChange("content_type", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="video">Video</SelectItem>
-                      <SelectItem value="article">Article</SelectItem>
-                      <SelectItem value="quiz">Quiz</SelectItem>
-                      <SelectItem value="assignment">Assignment</SelectItem>
-                      <SelectItem value="lab">Lab</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="content_url">Content URL (optional)</Label>
+                <Label htmlFor="video_url">Video URL (optional)</Label>
                 <Input
-                  id="content_url"
-                  value={formData.content_url}
-                  onChange={(e) => handleFormChange("content_url", e.target.value)}
-                  placeholder="https://example.com/video.mp4"
+                  id="video_url"
+                  value={formData.video_url}
+                  onChange={(e) => handleFormChange("video_url", e.target.value)}
+                  placeholder="https://www.youtube.com/watch?v=example"
                 />
               </div>
 
@@ -930,7 +918,7 @@ const ManageModules = () => {
               }}>
                 Cancel
               </Button>
-              <Button onClick={handleAddModule} disabled={!formData.title || !formData.description || !formData.course_id}>
+              <Button onClick={handleAddModule} disabled={!formData.title.trim() || !formData.description.trim() || !formData.course_id}>
                 Create Module
               </Button>
             </DialogFooter>
@@ -958,11 +946,11 @@ const ManageModules = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="edit-course">Course *</Label>
+                  <Label htmlFor="edit-course">Course</Label>
                   <Select
                     value={formData.course_id}
                     onValueChange={(value) => handleFormChange("course_id", value)}
-                    disabled={true} // Can't change course for existing module
+                    disabled={true}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -988,7 +976,7 @@ const ManageModules = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="edit-order">Order</Label>
                   <Input
@@ -1009,32 +997,14 @@ const ManageModules = () => {
                     onChange={(e) => handleFormChange("duration_minutes", parseInt(e.target.value))}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-content_type">Content Type</Label>
-                  <Select
-                    value={formData.content_type}
-                    onValueChange={(value) => handleFormChange("content_type", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="video">Video</SelectItem>
-                      <SelectItem value="article">Article</SelectItem>
-                      <SelectItem value="quiz">Quiz</SelectItem>
-                      <SelectItem value="assignment">Assignment</SelectItem>
-                      <SelectItem value="lab">Lab</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="edit-content_url">Content URL (optional)</Label>
+                <Label htmlFor="edit-video_url">Video URL (optional)</Label>
                 <Input
-                  id="edit-content_url"
-                  value={formData.content_url}
-                  onChange={(e) => handleFormChange("content_url", e.target.value)}
+                  id="edit-video_url"
+                  value={formData.video_url}
+                  onChange={(e) => handleFormChange("video_url", e.target.value)}
                 />
               </div>
 
@@ -1055,7 +1025,7 @@ const ManageModules = () => {
               }}>
                 Cancel
               </Button>
-              <Button onClick={handleUpdateModule}>
+              <Button onClick={handleUpdateModule} disabled={!formData.title.trim() || !formData.description.trim()}>
                 Update Module
               </Button>
             </DialogFooter>
@@ -1077,9 +1047,6 @@ const ManageModules = () => {
                 <p className="font-medium">{editingModule.title}</p>
                 <p className="text-sm text-muted-foreground mt-1">
                   Course: {editingModule.course}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {editingModule.lesson_count} lessons will be affected
                 </p>
               </div>
             )}
