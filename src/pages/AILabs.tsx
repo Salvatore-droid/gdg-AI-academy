@@ -57,7 +57,7 @@ export default function AILabs() {
           return;
         }
 
-        const response = await fetch('http://localhost:8000/api/ai-labs/', {
+        const response = await fetch('https://gdg-ai-academy-backend.onrender.com/api/ai-labs/', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -88,7 +88,7 @@ export default function AILabs() {
   const handleStartLab = async (labId: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8000/api/ai-labs/${labId}/start/`, {
+      const response = await fetch(`https://gdg-ai-academy-backend.onrender.com/api/ai-labs/${labId}/start/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -104,7 +104,7 @@ export default function AILabs() {
         });
         
         // Refresh labs to update status
-        const labsResponse = await fetch('http://localhost:8000/api/ai-labs/', {
+        const labsResponse = await fetch('https://gdg-ai-academy-backend.onrender.com/api/ai-labs/', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',

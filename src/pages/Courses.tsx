@@ -46,7 +46,7 @@ export default function Courses() {
         }
 
         // Fetch all available courses
-        const coursesResponse = await fetch('http://localhost:8000/api/courses/', {
+        const coursesResponse = await fetch('https://gdg-ai-academy-backend.onrender.com/api/courses/', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -54,7 +54,7 @@ export default function Courses() {
         });
 
         // Fetch user's enrolled courses
-        const userCoursesResponse = await fetch('http://localhost:8000/api/dashboard/courses/', {
+        const userCoursesResponse = await fetch('https://gdg-ai-academy-backend.onrender.com/api/dashboard/courses/', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -88,7 +88,7 @@ export default function Courses() {
   const handleEnrollCourse = async (courseId: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8000/api/courses/${courseId}/enroll/`, {
+      const response = await fetch(`https://gdg-ai-academy-backend.onrender.com/api/courses/${courseId}/enroll/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -104,7 +104,7 @@ export default function Courses() {
         });
         
         // Refresh user courses
-        const userCoursesResponse = await fetch('http://localhost:8000/api/dashboard/courses/', {
+        const userCoursesResponse = await fetch('https://gdg-ai-academy-backend.onrender.com/api/dashboard/courses/', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',

@@ -79,7 +79,7 @@ export default function Community() {
         }
 
         // Fetch community stats
-        const statsResponse = await fetch('http://localhost:8000/api/community/stats/', {
+        const statsResponse = await fetch('https://gdg-ai-academy-backend.onrender.com/api/community/stats/', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -87,7 +87,7 @@ export default function Community() {
         });
 
         // Fetch mentors
-        const mentorsResponse = await fetch('http://localhost:8000/api/community/mentors/', {
+        const mentorsResponse = await fetch('https://gdg-ai-academy-backend.onrender.com/api/community/mentors/', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -95,7 +95,7 @@ export default function Community() {
         });
 
         // Fetch discussions
-        const discussionsResponse = await fetch('http://localhost:8000/api/community/discussions/', {
+        const discussionsResponse = await fetch('https://gdg-ai-academy-backend.onrender.com/api/community/discussions/', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -103,7 +103,7 @@ export default function Community() {
         });
 
         // Fetch events
-        const eventsResponse = await fetch('http://localhost:8000/api/community/events/', {
+        const eventsResponse = await fetch('https://gdg-ai-academy-backend.onrender.com/api/community/events/', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -141,7 +141,7 @@ export default function Community() {
   const handleBookSession = async (mentorId: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8000/api/community/mentors/${mentorId}/book-session/`, {
+      const response = await fetch(`https://gdg-ai-academy-backend.onrender.com/api/community/mentors/${mentorId}/book-session/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -170,7 +170,7 @@ export default function Community() {
   const handleRegisterEvent = async (eventId: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8000/api/community/events/${eventId}/register/`, {
+      const response = await fetch(`https://gdg-ai-academy-backend.onrender.com/api/community/events/${eventId}/register/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -186,7 +186,7 @@ export default function Community() {
         });
         
         // Refresh events to update registration status
-        const eventsResponse = await fetch('http://localhost:8000/api/community/events/', {
+        const eventsResponse = await fetch('https://gdg-ai-academy-backend.onrender.com/api/community/events/', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',

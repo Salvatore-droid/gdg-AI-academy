@@ -24,7 +24,7 @@ export default function Auth() {
     const password = formData.get('admin-password') as string;
   
     try {
-      const response = await fetch('http://localhost:8000/api/admin/auth/login/', {
+      const response = await fetch('https://gdg-ai-academy-backend.onrender.com/api/admin/auth/login/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -70,7 +70,7 @@ export default function Auth() {
     const password = formData.get('login-password') as string;
   
     try {
-      const response = await fetch('http://localhost:8000/api/auth/login/', {
+      const response = await fetch('https://gdg-ai-academy-backend.onrender.com/api/auth/login/', {
         method: 'POST', // Make sure this is POST
         headers: {
           'Content-Type': 'application/json',
@@ -129,7 +129,7 @@ export default function Auth() {
     }
   
     try {
-      const response = await fetch('http://localhost:8000/api/auth/signup/', {
+      const response = await fetch('https://gdg-ai-academy-backend.onrender.com/api/auth/signup/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

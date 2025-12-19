@@ -69,7 +69,7 @@ export default function CourseDetail() {
         }
 
         // Fetch course details
-        const courseResponse = await fetch(`http://localhost:8000/api/courses/${id}/`, {
+        const courseResponse = await fetch(`https://gdg-ai-academy-backend.onrender.com/api/courses/${id}/`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -77,7 +77,7 @@ export default function CourseDetail() {
         });
 
         // Fetch user progress for this course
-        const progressResponse = await fetch(`http://localhost:8000/api/courses/${id}/progress/`, {
+        const progressResponse = await fetch(`https://gdg-ai-academy-backend.onrender.com/api/courses/${id}/progress/`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -123,7 +123,7 @@ export default function CourseDetail() {
   const handleMarkComplete = async (moduleId: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8000/api/modules/${moduleId}/complete/`, {
+      const response = await fetch(`https://gdg-ai-academy-backend.onrender.com/api/modules/${moduleId}/complete/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -139,7 +139,7 @@ export default function CourseDetail() {
         });
         
         // Refresh progress data
-        const progressResponse = await fetch(`http://localhost:8000/api/courses/${id}/progress/`, {
+        const progressResponse = await fetch(`https://gdg-ai-academy-backend.onrender.com/api/courses/${id}/progress/`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',

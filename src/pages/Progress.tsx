@@ -74,7 +74,7 @@ export default function ProgressPage() {
         }
 
         // Fetch certificates
-        const certificatesResponse = await fetch('http://localhost:8000/api/dashboard/certificates/', {
+        const certificatesResponse = await fetch('https://gdg-ai-academy-backend.onrender.com/api/dashboard/certificates/', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -82,7 +82,7 @@ export default function ProgressPage() {
         });
 
         // Fetch learning stats
-        const statsResponse = await fetch('http://localhost:8000/api/progress/stats/', {
+        const statsResponse = await fetch('https://gdg-ai-academy-backend.onrender.com/api/progress/stats/', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -90,7 +90,7 @@ export default function ProgressPage() {
         });
 
         // Fetch achievements
-        const achievementsResponse = await fetch('http://localhost:8000/api/progress/achievements/', {
+        const achievementsResponse = await fetch('https://gdg-ai-academy-backend.onrender.com/api/progress/achievements/', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -126,7 +126,7 @@ export default function ProgressPage() {
   const handleDownloadCertificate = async (certificateId: string, certificateTitle: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8000/api/certificates/${certificateId}/download/`, {
+      const response = await fetch(`https://gdg-ai-academy-backend.onrender.com/api/certificates/${certificateId}/download/`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

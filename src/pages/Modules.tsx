@@ -64,7 +64,7 @@ export default function Modules() {
         }
 
         // Fetch user's enrolled courses
-        const coursesResponse = await fetch('http://localhost:8000/api/dashboard/courses/', {
+        const coursesResponse = await fetch('https://gdg-ai-academy-backend.onrender.com/api/dashboard/courses/', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -72,7 +72,7 @@ export default function Modules() {
         });
 
         // Fetch all modules for enrolled courses
-        const modulesResponse = await fetch('http://localhost:8000/api/modules/user-modules/', {
+        const modulesResponse = await fetch('https://gdg-ai-academy-backend.onrender.com/api/modules/user-modules/', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',

@@ -65,7 +65,7 @@ export default function Dashboard() {
           return;
         }
 
-        const response = await fetch('http://localhost:8000/api/dashboard/stats/', {
+        const response = await fetch('https://gdg-ai-academy-backend.onrender.com/api/dashboard/stats/', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',

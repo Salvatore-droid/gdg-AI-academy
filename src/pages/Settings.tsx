@@ -51,7 +51,7 @@ export default function Settings() {
         }
 
         // Fetch user profile
-        const profileResponse = await fetch('http://localhost:8000/api/auth/profile/', {
+        const profileResponse = await fetch('https://gdg-ai-academy-backend.onrender.com/api/auth/profile/', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -59,7 +59,7 @@ export default function Settings() {
         });
 
         // Fetch user settings
-        const settingsResponse = await fetch('http://localhost:8000/api/settings/', {
+        const settingsResponse = await fetch('https://gdg-ai-academy-backend.onrender.com/api/settings/', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -96,7 +96,7 @@ export default function Settings() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8000/api/settings/profile/', {
+      const response = await fetch('https://gdg-ai-academy-backend.onrender.com/api/settings/profile/', {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -135,7 +135,7 @@ export default function Settings() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8000/api/settings/', {
+      const response = await fetch('https://gdg-ai-academy-backend.onrender.com/api/settings/', {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -174,7 +174,7 @@ export default function Settings() {
     setSaving(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8000/api/auth/change-password/', {
+      const response = await fetch('https://gdg-ai-academy-backend.onrender.com/api/auth/change-password/', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
